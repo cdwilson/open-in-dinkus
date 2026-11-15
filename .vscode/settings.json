@@ -1,0 +1,8 @@
+{
+	"search.exclude": {
+		"out": true,
+		"dist": true
+	},
+	// The build tasks are defined in tasks.json, so automatic detection is off.
+	"js/ts.tsc.autoDetect": "off"
+}

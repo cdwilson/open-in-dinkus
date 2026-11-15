@@ -1,0 +1,26 @@
+# Dependabot opens pull requests when the build tools or GitHub Actions used by
+# this repository have updates. CI runs on each one before you merge it.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      dev-dependencies:
+        patterns: ['*']
+    ignore:
+      # These two must stay in step with the minimum VS Code version in
+      # package.json ("engines.vscode"), so they are updated by hand.
+      - dependency-name: '@types/vscode'
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

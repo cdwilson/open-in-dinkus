@@ -1,0 +1,158 @@
+{
+  "name": "open-in-dinkus",
+  "displayName": "Open in Dinkus",
+  "description": "Open Markdown files in the Dinkus markdown studio for macOS from the Explorer, the editor, or the editor title bar.",
+  "version": "0.1.0",
+  "publisher": "cdwilson",
+  "license": "MIT",
+  "author": {
+    "name": "Chris Wilson"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cdwilson/open-in-dinkus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cdwilson/open-in-dinkus/issues"
+  },
+  "homepage": "https://github.com/cdwilson/open-in-dinkus#readme",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "dinkus",
+    "markdown",
+    "external editor",
+    "open with",
+    "macos"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": {
+      "supported": "limited",
+      "description": "Dinkus can only open files stored on this Mac, so files in virtual workspaces cannot be opened."
+    }
+  },
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "files": [
+    "dist/extension.js",
+    "images/icon.png",
+    "images/dinkus-light.svg",
+    "images/dinkus-dark.svg",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "openInDinkus.open",
+        "title": "Open in Dinkus",
+        "icon": {
+          "light": "images/dinkus-light.svg",
+          "dark": "images/dinkus-dark.svg"
+        }
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "openInDinkus.open",
+          "when": "isMac && resourceLangId == markdown && resourceScheme == file"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "openInDinkus.open",
+          "when": "isMac && resourceLangId == markdown && resourceScheme == file && !explorerResourceIsFolder",
+          "group": "navigation@-1"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "openInDinkus.open",
+          "when": "isMac && resourceLangId == markdown && resourceScheme == file",
+          "group": "Dinkus"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "openInDinkus.open",
+          "when": "isMac && resourceLangId == markdown && resourceScheme == file && config.openInDinkus.showEditorTitleButton",
+          "group": "navigation@90"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "command": "openInDinkus.open",
+          "when": "isMac && resourceLangId == markdown && resourceScheme == file",
+          "group": "Dinkus"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Open in Dinkus",
+      "properties": {
+        "openInDinkus.showEditorTitleButton": {
+          "type": "boolean",
+          "default": true,
+          "order": 1,
+          "description": "Show the Open in Dinkus button in the editor title bar for Markdown files."
+        },
+        "openInDinkus.saveBeforeOpening": {
+          "type": "boolean",
+          "default": true,
+          "order": 2,
+          "markdownDescription": "Save unsaved changes before opening a file in Dinkus. Dinkus reads the file from disk, so with this off it shows the last saved version."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint .",
+    "compile-tests": "tsc -p . --outDir out",
+    "pretest": "npm run compile-tests && npm run compile",
+    "test": "vscode-test",
+    "test:dinkus": "OPEN_IN_DINKUS_E2E=1 npm test",
+    "vsix": "vsce package"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "1.90.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.1.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.15.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "glob": "^14.0.6",
+    "minimatch": "^11.0.8",
+    "serialize-javascript": "^7.1.4"
+  },
+  "allowScripts": {
+    "esbuild": false,
+    "@vscode/vsce-sign": false
+  }
+}

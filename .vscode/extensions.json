@@ -1,0 +1,8 @@
+{
+	// Extensions VS Code will suggest installing when this folder is opened.
+	// Both are optional: F5 works without them.
+	"recommendations": [
+		"dbaeumer.vscode-eslint",
+		"ms-vscode.extension-test-runner"
+	]
+}
