@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import { launchDinkus, type LaunchFailure } from './dinkus';
-import { partitionTargets, resolveTargets } from './targets';
+import { findSelectedFolders, partitionTargets, resolveTargets } from './targets';
 
 const COMMAND_ID = 'openInDinkus.open';
 const DINKUS_WEBSITE = 'https://dinkus.textualize.io/';
-/** Opening more files than this at once asks for confirmation first. */
+/** Opening more files and folders than this at once asks for confirmation first. */
 const CONFIRM_THRESHOLD = 10;
 
 /**
@@ -26,7 +26,7 @@ export function deactivate(): void {
 }
 
 /**
- * The command. Resolves to true when the files were handed to Dinkus, so
+ * The command. Resolves to true when its targets were handed to Dinkus, so
  * keybindings, other extensions and tests can tell whether it worked.
  */
 async function openInDinkus(log: vscode.LogOutputChannel, clicked: unknown, selected: unknown): Promise<boolean> {
@@ -37,10 +37,11 @@ async function openInDinkus(log: vscode.LogOutputChannel, clicked: unknown, sele
 		return false;
 	}
 
-	const targets = resolveTargets(clicked, selected, activeFileUri());
+	const folders = await findSelectedFolders(selected);
+	const targets = resolveTargets(clicked, selected, activeFileUri(), (uri) => folders.has(uri.toString()));
 	if (targets.length === 0) {
 		void vscode.window.showInformationMessage(
-			'Open a Markdown file, or right-click one in the Explorer, to open it in Dinkus.',
+			'Open a Markdown file, or right-click a Markdown file or a folder in the Explorer, to open it in Dinkus.',
 		);
 		return false;
 	}
@@ -51,7 +52,7 @@ async function openInDinkus(log: vscode.LogOutputChannel, clicked: unknown, sele
 	}
 	if (notLocal.length > 0) {
 		void vscode.window.showWarningMessage(
-			'Dinkus can only open files stored on this Mac. Remote and virtual files cannot be opened.',
+			'Dinkus can only open files and folders stored on this Mac. Remote and virtual ones cannot be opened.',
 		);
 	}
 	if (local.length === 0) {
@@ -61,7 +62,7 @@ async function openInDinkus(log: vscode.LogOutputChannel, clicked: unknown, sele
 	if (local.length > CONFIRM_THRESHOLD) {
 		const open = 'Open';
 		const choice = await vscode.window.showWarningMessage(
-			`Open ${local.length} files in Dinkus?`,
+			`Open ${local.length} items in Dinkus?`,
 			{ modal: true },
 			open,
 		);
@@ -103,7 +104,7 @@ async function reportFailure(result: LaunchFailure, log: vscode.LogOutputChannel
 
 	const showLog = 'Show Log';
 	const choice = await vscode.window.showErrorMessage(
-		`Could not open the file in Dinkus. ${truncate(result.detail, 300)}`,
+		`Could not open in Dinkus. ${truncate(result.detail, 300)}`,
 		showLog,
 	);
 	if (choice === showLog) {
@@ -125,7 +126,10 @@ function activeFileUri(): vscode.Uri | undefined {
 	return undefined;
 }
 
-/** Saves any of the given files that have unsaved changes, so Dinkus reads the current text. */
+/**
+ * Saves any of the given files that have unsaved changes, so Dinkus reads the
+ * current text. Folders are skipped: the files inside them are not saved.
+ */
 async function saveUnsavedChanges(uris: readonly vscode.Uri[], log: vscode.LogOutputChannel): Promise<void> {
 	for (const uri of uris) {
 		const key = uri.toString();

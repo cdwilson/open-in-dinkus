@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import * as vscode from 'vscode';
-import { looksLikeMarkdown, partitionTargets, resolveTargets } from '../targets';
+import { findSelectedFolders, looksLikeMarkdown, partitionTargets, resolveTargets } from '../targets';
 
 const file = (name: string) => vscode.Uri.file(`/Users/someone/notes/${name}`);
 const names = (uris: vscode.Uri[]) => uris.map((uri) => uri.path.split('/').pop());
@@ -53,6 +53,47 @@ suite('resolveTargets', () => {
 	test('ignores a selection that does not contain the clicked file', () => {
 		const selection = [file('b.md'), file('c.md')];
 		assert.deepStrictEqual(names(resolveTargets(file('a.md'), selection, undefined)), ['a.md']);
+	});
+
+	test('opens a clicked folder', () => {
+		assert.deepStrictEqual(names(resolveTargets(file('docs'), [file('docs')], file('a.md'))), ['docs']);
+	});
+
+	test('keeps folders and Markdown files in a multi-selection and skips other files', () => {
+		const selection = [file('docs'), file('a.md'), file('photo.png'), file('drafts')];
+		const isFolder = (uri: vscode.Uri) => ['docs', 'drafts'].includes(uri.path.split('/').pop() ?? '');
+		assert.deepStrictEqual(names(resolveTargets(file('a.md'), selection, undefined, isFolder)), [
+			'docs',
+			'a.md',
+			'drafts',
+		]);
+	});
+});
+
+suite('findSelectedFolders', () => {
+	// The test instance has the examples folder open.
+	const example = (...segments: string[]) => {
+		const folder = vscode.workspace.workspaceFolders?.[0];
+		assert.ok(folder, 'the examples folder should be open in the test instance');
+		return vscode.Uri.joinPath(folder.uri, ...segments);
+	};
+
+	test('finds the folders in a selection', async () => {
+		const selection = [example('assets'), example('sample.md'), example('image-paths'), example('missing')];
+		const folders = await findSelectedFolders(selection);
+		assert.deepStrictEqual([...folders].sort(), [example('assets').toString(), example('image-paths').toString()]);
+	});
+
+	test('ignores folders that are not on the local disk and items that are not URIs', async () => {
+		const remote = vscode.Uri.parse('vscode-remote://ssh-remote+host/home/someone/docs');
+		const folders = await findSelectedFolders([remote, example('assets').fsPath, example('sample.md')]);
+		assert.strictEqual(folders.size, 0);
+	});
+
+	test('does not check a single selection or a missing one', async () => {
+		assert.strictEqual((await findSelectedFolders([example('assets')])).size, 0);
+		assert.strictEqual((await findSelectedFolders(undefined)).size, 0);
+		assert.strictEqual((await findSelectedFolders({ groupId: 1 })).size, 0);
 	});
 });
 

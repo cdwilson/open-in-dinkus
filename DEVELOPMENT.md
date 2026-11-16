@@ -17,15 +17,15 @@ A VS Code extension is a folder with a `package.json` (the *manifest*) and some 
 | --- | --- |
 | `package.json` | The manifest. Declares the **Open in Dinkus** command, the menus it appears in (`contributes.menus`), the two settings, and the Marketplace listing details. |
 | `src/extension.ts` | Entry point. Registers the command and handles the user-facing flow: messages, saving, error reporting. |
-| `src/targets.ts` | Works out which files a command invocation refers to and which of them Dinkus can open. |
-| `src/dinkus.ts` | Starts Dinkus by running `/usr/bin/open -b io.textualize.dinkus <files>`. |
+| `src/targets.ts` | Works out which files and folders a command invocation refers to and which of them Dinkus can open. |
+| `src/dinkus.ts` | Starts Dinkus by running `/usr/bin/open -b io.textualize.dinkus <files or folders>`. |
 | `src/test/` | Automated tests. |
 | `esbuild.js` | Build script. Bundles `src/` into one file, `dist/extension.js`, which is what VS Code loads and what gets published. |
 | `examples/` | Markdown files for trying the extension. Not published. |
 | `.vscode/` | Makes F5 work in this repository. Not published. |
 | `.github/` | Automated checks, the release workflow, and dependency update settings. |
 
-The `when` conditions in `contributes.menus` control where the command is visible: only on macOS (`isMac`), only for Markdown (`resourceLangId == markdown`), and only for files on the local disk (`resourceScheme == file`).
+The `when` conditions in `contributes.menus` control where the command is visible: only on macOS (`isMac`), only for Markdown (`resourceLangId == markdown`), and only for files on the local disk (`resourceScheme == file`). The Explorer entry also accepts folders (`explorerResourceIsFolder`). It is one entry with one position for both, which is what keeps the menu the same whether a file or a folder is right-clicked.
 
 ### Pictures and the root folder
 
@@ -40,7 +40,9 @@ Everything the extension can send goes through macOS, which delivers it the same
 | The folder, then the file | The same. A file inside an already-open folder still opens on its own. |
 | The same folder twice | Two folder windows. |
 
-So sending the workspace folder as well does not give the document a root, and it leaves an extra window behind each time. That is why the extension sends only the file. Dinkus has no command-line option or URL scheme that could carry a root.
+So sending the workspace folder as well does not give the document a root, and it leaves an extra window behind each time. That is why the extension sends only the file.
+
+A folder is sent only when the user asks for one, by right-clicking it in the Explorer. Dinkus then opens a folder window with that folder as its root. Dinkus has no command-line option or URL scheme that could carry a root.
 
 Supporting slash-rooted pictures needs a change in Dinkus, for example opening a file from another app as a tab in the window of an already-open folder that contains it. If that arrives, the place to use it is `buildOpenArgs` in `src/dinkus.ts`, with `vscode.workspace.getWorkspaceFolder(uri)` supplying the root. `examples/image-paths/images.md` is the test case.
 
@@ -70,6 +72,9 @@ There are three levels. Do the first while developing, and all three before a re
    - [ ] Explorer: right-click `sample.md` > **Open in Dinkus**.
    - [ ] Explorer: right-click the file named `tricky $(name) & 'quotes'.md` > **Open in Dinkus**. It should open normally despite its name.
    - [ ] Explorer: select both files (Cmd-click), right-click one > **Open in Dinkus**. Both should open.
+   - [ ] Explorer: right-click the `image-paths` folder > **Open in Dinkus**. Dinkus should open a folder window with `image-paths` as its root.
+   - [ ] Explorer: select `sample.md`, the `assets` folder and `assets/a.png` (Cmd-click), right-click `sample.md` > **Open in Dinkus**. The file and the folder should open, and the picture should not.
+   - [ ] Explorer: in the menus for `sample.md` and for the `assets` folder, **Open in Dinkus** should be the last entry of the first section, directly below **Open in Integrated Terminal**.
    - [ ] Open `sample.md`, right-click inside the editor > **Open in Dinkus**.
    - [ ] Click the Dinkus button (three asterisks) at the top right of the editor. Check it is visible in both a light and a dark theme.
    - [ ] Right-click the editor's tab > **Open in Dinkus**.
@@ -93,13 +98,13 @@ npm test
 
 This type-checks and lints the code, builds it, downloads a private copy of VS Code into `.vscode-test/` (first run only, about 370 MB), and runs the tests inside it. A VS Code window flashes open and closes. Dinkus is not started.
 
-To also run the one test that really opens the three example files in Dinkus (`sample.md`, the file with the tricky name, and `image-paths/images.md`):
+To also run the two tests that really start Dinkus, one opening three example files (`sample.md`, the file with the tricky name, and `image-paths/images.md`) and one opening the `examples` folder:
 
 ```sh
 npm run test:dinkus
 ```
 
-The test passes when macOS has handed the files to Dinkus. It cannot see inside Dinkus, so look at the `images.md` window yourself to check the pictures: expect the result described in the F5 checklist above.
+Each test passes when macOS has handed its files or folder to Dinkus. It cannot see inside Dinkus, so look at the `images.md` window yourself to check the pictures: expect the result described in the F5 checklist above.
 
 ### 3. Install the packaged extension
 
@@ -241,6 +246,6 @@ VS Code forks such as Cursor, Windsurf and VSCodium cannot use Microsoft's Marke
   - `images/icon.png` is the Marketplace icon: the logo scaled to 256 pixels. The Marketplace does not accept SVG icons.
   - `images/dinkus-light.svg` and `images/dinkus-dark.svg` are the title bar button: the logo's outline in one colour, the same silhouette the Dinkus website uses as a section separator. VS Code picks the file that matches the colour theme. The two files differ only in fill colour (`#424242` for light themes, `#C5C5C5` for dark), which are the greys VS Code uses for its own toolbar icons.
 - **Where the menu entries appear.** Each entry under `menus` in `package.json` has a `group`, which names the section of the menu it sits in. VS Code shows the `navigation` section first and sorts the rest by name.
-  - `navigation@-1` (Explorer) puts the entry in VS Code's built-in first section. The number after `@` is its position within the section; VS Code's own entries start at 4, so -1 comes first. Another extension that uses a lower number will sit above it.
+  - `navigation@100` (Explorer) puts the entry in VS Code's built-in first section. The number after `@` is its position within the section. VS Code's own entries there end with **Open in Integrated Terminal** at 30 and **Open in External Terminal** at 31, so 100 comes last. Another extension that uses a higher number will sit below it.
   - `Dinkus` (editor and editor tab) is a section of its own. It lands wherever that name sorts among the other sections, which is after VS Code's numbered sections such as `1_modification` and `9_cutcopypaste`.
 - **If Dinkus changes its app identifier.** Update `DINKUS_BUNDLE_ID` in `src/dinkus.ts`. Find the current value with `mdls -name kMDItemCFBundleIdentifier /Applications/Dinkus.app`.

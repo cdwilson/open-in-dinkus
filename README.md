@@ -1,6 +1,6 @@
 # Open in Dinkus
 
-Open Markdown files from Visual Studio Code in [Dinkus](https://dinkus.textualize.io/), the markdown studio for macOS.
+Open Markdown files and folders from Visual Studio Code in [Dinkus](https://dinkus.textualize.io/), the markdown studio for macOS.
 
 This is an unofficial, community-made extension. It is not affiliated with or endorsed by Textualize, the makers of Dinkus. The Dinkus name and logo belong to Textualize.
 
@@ -17,6 +17,10 @@ This is an unofficial, community-made extension. It is not affiliated with or en
 | Command Palette | Press `Cmd+Shift+P` and run **Open in Dinkus**. |
 
 If the file has unsaved changes, they are saved first so that Dinkus shows the same text as VS Code.
+
+**Folders** can be opened too: right-click a folder in the Explorer and choose **Open in Dinkus**. Dinkus opens it as a root folder, the same as its own **File > Open Folder…**. Files inside the folder are not saved first.
+
+In the Explorer the entry is in the same place for files and folders: at the end of the first section of the menu, below **Open in Integrated Terminal**. A selection can mix the two, in which case its folders and Markdown files are opened and its other files are left out.
 
 ## Requirements
 
@@ -50,20 +54,20 @@ The extension does not claim a shortcut by default. To add one, run **Preference
 The extension hands Dinkus the file itself, so Dinkus opens it on its own rather than as part of a folder. That affects pictures the document links to:
 
 - **Relative paths** such as `images/chart.png` or `../images/chart.png`: the first time, Dinkus asks for permission to read the folder the pictures are in. Choose **Allow…** to let Dinkus show them.
-- **Paths that start with a slash** such as `/images/chart.png`: these are not shown. Dinkus resolves them from the root of a folder opened with **File > Open Folder…**, and a file opened from another app has no such folder. To see these pictures, open the folder in Dinkus and choose the document from its folder pane.
+- **Paths that start with a slash** such as `/images/chart.png`: these are not shown. Dinkus resolves them from the root of a folder opened with **File > Open Folder…**, and a file opened from another app has no such folder. To see these pictures, open the folder in Dinkus (right-click it in the Explorer and choose **Open in Dinkus**) and choose the document from its folder pane.
 
 ## Limitations
 
-- Only files stored on your Mac can be opened. Files in a remote workspace (SSH, a dev container, WSL, Codespaces) or a virtual workspace live somewhere Dinkus cannot reach, so the menu entries are hidden for them.
+- Only files and folders stored on your Mac can be opened. Files in a remote workspace (SSH, a dev container, WSL, Codespaces) or a virtual workspace live somewhere Dinkus cannot reach, so the menu entries are hidden for them.
 - A new file must be saved to disk before it can be opened in Dinkus.
-- The menu entries appear only for files VS Code recognises as Markdown.
+- The menu entries appear only for files VS Code recognises as Markdown and, in the Explorer, for folders.
 
 ## Privacy and security
 
 - The extension collects no data and makes no network requests.
 - It has no runtime dependencies.
 - It runs only when you use the command. It does nothing at startup or in the background.
-- Files are handed to Dinkus through the macOS `open` tool, addressed by Dinkus's app identifier. File names are passed as data and never through a shell, so unusual characters in a file name cannot run commands.
+- Files and folders are handed to Dinkus through the macOS `open` tool, addressed by Dinkus's app identifier. Their names are passed as data and never through a shell, so unusual characters in a name cannot run commands.
 
 To report a security problem, see [SECURITY.md](SECURITY.md).
 

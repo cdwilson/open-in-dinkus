@@ -76,7 +76,7 @@ const runWithExecFile: Runner = (file, args) =>
 		);
 	});
 
-/** Asks macOS to open the given files in Dinkus. Never throws. */
+/** Asks macOS to open the given files and folders in Dinkus. Never throws. */
 export async function launchDinkus(
 	filePaths: readonly string[],
 	run: Runner = runWithExecFile,

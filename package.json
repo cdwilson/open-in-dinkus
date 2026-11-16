@@ -1,7 +1,7 @@
 {
   "name": "open-in-dinkus",
   "displayName": "Open in Dinkus",
-  "description": "Open Markdown files in the Dinkus markdown studio for macOS from the Explorer, the editor, or the editor title bar.",
+  "description": "Open Markdown files and folders in the Dinkus markdown studio for macOS from the Explorer, the editor, or the editor title bar.",
   "version": "0.1.0",
   "publisher": "cdwilson",
   "license": "MIT",
@@ -74,8 +74,8 @@
       "explorer/context": [
         {
           "command": "openInDinkus.open",
-          "when": "isMac && resourceLangId == markdown && resourceScheme == file && !explorerResourceIsFolder",
-          "group": "navigation@-1"
+          "when": "isMac && resourceScheme == file && (resourceLangId == markdown || explorerResourceIsFolder)",
+          "group": "navigation@100"
         }
       ],
       "editor/context": [

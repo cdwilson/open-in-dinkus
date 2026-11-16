@@ -22,20 +22,52 @@ function isSameUri(a: vscode.Uri, b: vscode.Uri): boolean {
 }
 
 /**
- * Works out which files a command invocation refers to.
+ * Finds the folders among the items selected in the Explorer, as URI strings.
+ * A URI does not say whether it names a file or a folder, so this asks the
+ * file system. A single selection is not checked: the clicked item is opened
+ * whatever it is.
+ */
+export async function findSelectedFolders(selected: unknown): Promise<Set<string>> {
+	const folders = new Set<string>();
+	if (!Array.isArray(selected) || selected.length < 2) {
+		return folders;
+	}
+	await Promise.all(
+		selected.map(async (item: unknown) => {
+			if (!(item instanceof vscode.Uri) || item.scheme !== 'file') {
+				return;
+			}
+			try {
+				const stat = await vscode.workspace.fs.stat(item);
+				if ((stat.type & vscode.FileType.Directory) !== 0) {
+					folders.add(item.toString());
+				}
+			} catch {
+				// Deleted or unreadable since it was selected: not a folder to open.
+			}
+		}),
+	);
+	return folders;
+}
+
+/**
+ * Works out which files and folders a command invocation refers to.
  *
  * VS Code passes different arguments depending on where the command was run:
- * - Explorer context menu: the clicked file, then all selected files.
+ * - Explorer context menu: the clicked item, then all selected items.
  * - Editor context menu, title bar button, tab context menu: the file.
  * - Command Palette or a keybinding: nothing, so `active` is used.
  *
  * Arguments are typed `unknown` because any extension or keybinding can run
  * the command with arbitrary arguments; anything that is not a URI is ignored.
+ *
+ * `isFolder` says which selected items are folders; see `findSelectedFolders`.
  */
 export function resolveTargets(
 	clicked: unknown,
 	selected: unknown,
 	active: vscode.Uri | undefined,
+	isFolder: (uri: vscode.Uri) => boolean = () => false,
 ): vscode.Uri[] {
 	if (!(clicked instanceof vscode.Uri)) {
 		return active ? [active] : [];
@@ -49,11 +81,12 @@ export function resolveTargets(
 		return [clicked];
 	}
 
-	// The clicked file is always opened. Other selected files are included only
-	// if they are Markdown, so a mixed selection opens just its Markdown files.
+	// The clicked item is always opened. Other selected items are included only
+	// if they are Markdown files or folders, so a mixed selection leaves out
+	// files Dinkus is not meant for.
 	const targets: vscode.Uri[] = [];
 	for (const uri of selection) {
-		const wanted = isSameUri(uri, clicked) || looksLikeMarkdown(uri);
+		const wanted = isSameUri(uri, clicked) || looksLikeMarkdown(uri) || isFolder(uri);
 		if (wanted && !targets.some((target) => isSameUri(target, uri))) {
 			targets.push(uri);
 		}
@@ -62,7 +95,7 @@ export function resolveTargets(
 }
 
 export interface PartitionedTargets {
-	/** Files on this machine's disk, which Dinkus can open. */
+	/** Files and folders on this machine's disk, which Dinkus can open. */
 	local: vscode.Uri[];
 	/** New files that have never been saved. */
 	unsaved: vscode.Uri[];
