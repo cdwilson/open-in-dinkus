@@ -2,7 +2,7 @@
   "name": "open-in-dinkus",
   "displayName": "Open in Dinkus",
   "description": "Open Markdown files and folders in the Dinkus markdown studio for macOS from the Explorer, the editor, or the editor title bar.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "cdwilson",
   "license": "MIT",
   "author": {
